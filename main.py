@@ -1,26 +1,33 @@
 import sys
+import configparser
 def main():
-    if len(sys.argv) < 2:
-        print("Please select one mode as parameter")
-        return 1
+    config = configparser.ConfigParser()
+
+    config.read("setup.cfg")
+    mode = config["general"]["mode"]
     nInstallmentsMode = False
     achievedSumMode = False
-    if sys.argv[1] == "installments":
+    if mode == "installments":
         nInstallmentsMode = True
-    elif sys.argv[1] == "sum":
+    elif mode == "sum":
         achievedSumMode = True
-    initialMonthlyInvestment = 1500
+    varyingInvestments = list(map(int, config["contributions"]["wage"].split()))
     # The anual interest rate after subtracting inflation
-    netoInterestRate = 3.0
+    netoInterestRate = float(config["general"]["interest"])
     monthInterestRate = (1.0+netoInterestRate/100.0)**(1/12) - 1.0
     print("Monthly interest rate: {}".format(monthInterestRate*100.0))
     sum = 0.0
     if nInstallmentsMode:
-        print("Insert the number of installments")
-        nInstallments = int(input())
-        
-        for i in range(nInstallments):
-            sum = sum*(1.0+monthInterestRate) + initialMonthlyInvestment
+        nYears = int(config["general"]["years"])
+        print("No. years: {}".format(nYears))        
+        for i in range(nYears*12):
+            if i//12 < len(varyingInvestments):
+                monthlyInvestment = varyingInvestments[i//12]
+            else:
+                monthlyInvestment = varyingInvestments[-1]
+            sum = sum*(1.0+monthInterestRate) + monthlyInvestment
+            print("{}. Current sum: {}".format(i+1, sum))
+
         
         print("The savings at the end will be of: {}".format(sum))
 
