@@ -1,35 +1,40 @@
 import sys
 import configparser
+import plot
+
 def main():
     config = configparser.ConfigParser()
 
     config.read("setup.cfg")
+
     mode = config["general"]["mode"]
-    nInstallmentsMode = False
-    achievedSumMode = False
-    if mode == "installments":
-        nInstallmentsMode = True
-    elif mode == "sum":
-        achievedSumMode = True
-    varyingInvestments = list(map(int, config["contributions"]["wage"].split()))
+    n_installments_mode = mode == "installments"
+    achieved_sum_mode = mode == "sum"
+
+    varying_investments = list(map(int, config["contributions"]["installment"].split()))
     # The anual interest rate after subtracting inflation
-    netoInterestRate = float(config["general"]["interest"])
-    monthInterestRate = (1.0+netoInterestRate/100.0)**(1/12) - 1.0
-    print("Monthly interest rate: {}".format(monthInterestRate*100.0))
+    year_interest_rate = float(config["general"]["interest"])
+    month_interest_rate = (1.0+year_interest_rate/100.0)**(1/12) - 1.0
+    print("Monthly interest rate: {}".format(month_interest_rate*100.0))
     sum = 0.0
-    if nInstallmentsMode:
-        nYears = int(config["general"]["years"])
-        print("No. years: {}".format(nYears))        
-        for i in range(nYears*12):
-            if i//12 < len(varyingInvestments):
-                monthlyInvestment = varyingInvestments[i//12]
+    time = [0]
+    sum_list = [sum]
+    if n_installments_mode:
+        n_years = int(config["general"]["years"])
+        print("No. years: {}".format(n_years))        
+        for month in range(n_years*12):
+            if month//12 < len(varying_investments):
+                month_investment = varying_investments[month//12]
             else:
-                monthlyInvestment = varyingInvestments[-1]
-            sum = sum*(1.0+monthInterestRate) + monthlyInvestment
-            print("{}. Current sum: {}".format(i+1, sum))
+                month_investment = varying_investments[-1]
+            sum = sum*(1.0+month_interest_rate) + month_investment
+            time.append(month/12)
+            sum_list.append(sum)
+            # print(f"{month+1:3}. Current sum: {sum:.2f}")
 
         
-        print("The savings at the end will be of: {}".format(sum))
+    print(f"The savings at the end will be: {sum}")
+    plot.plot_xy(time, sum_list)
 
 
 if __name__ == '__main__':
